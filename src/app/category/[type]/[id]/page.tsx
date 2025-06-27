@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ArrowLeft, 
-  Filter, 
+  Filter,
   SortAsc, 
   SortDesc, 
   Grid, 
@@ -335,7 +335,7 @@ export default function CategoryPage() {
                           ? new Date(item.first_air_date).getFullYear()
                           : null
                         }
-                        mediaType={type as 'movie' | 'tv'}
+                        mediaType={type === 'movies' ? 'movie' : 'tv'}
                         release_date={item.release_date}
                         first_air_date={item.first_air_date}
                         runtime={type === 'movies' ? item.runtime : item.episode_run_time?.[0]}

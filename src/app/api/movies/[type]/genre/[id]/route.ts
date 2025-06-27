@@ -49,15 +49,60 @@ export async function GET(
 
     const data = await response.json()
 
-    // Transform the data to include media_type
-    const transformedResults = data.results.map((item: any) => ({
-      ...item,
-      media_type: type === 'movies' ? 'movie' : 'tv'
-    }))
+    // Fetch detailed information for each item
+    const detailedResults = await Promise.all(
+      data.results.map(async (item: any) => {
+        try {
+          const detailEndpoint = type === 'movies' ? 'movie' : 'tv'
+          const detailUrl = `${TMDB_BASE_URL}/${detailEndpoint}/${item.id}?api_key=${TMDB_API_KEY}&language=es-ES`
+          
+          const detailResponse = await fetch(detailUrl)
+          if (detailResponse.ok) {
+            const detailData = await detailResponse.json()
+            
+            // Log for debugging
+            if (type === 'tv') {
+              console.log(`TV Show ${item.id} (${item.name || item.title}): episode_run_time =`, detailData.episode_run_time)
+            }
+            
+            const result = {
+              ...item,
+              media_type: type === 'movies' ? 'movie' : 'tv',
+              runtime: type === 'movies' ? detailData.runtime : undefined,
+              episode_run_time: type === 'tv' ? (detailData.episode_run_time || []) : undefined,
+              genres: detailData.genres || []
+            }
+            
+            // Log the final result for debugging
+            if (type === 'tv') {
+              console.log(`Final result for TV Show ${item.id}:`, {
+                episode_run_time: result.episode_run_time,
+                runtime: result.runtime
+              })
+            }
+            
+            return result
+          } else {
+            // If detail fetch fails, return basic item with media_type
+            return {
+              ...item,
+              media_type: type === 'movies' ? 'movie' : 'tv'
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching details for ${type} ${item.id}:`, error)
+          // Return basic item if detail fetch fails
+          return {
+            ...item,
+            media_type: type === 'movies' ? 'movie' : 'tv'
+          }
+        }
+      })
+    )
 
     return NextResponse.json({
       ...data,
-      results: transformedResults
+      results: detailedResults
     })
   } catch (error) {
     console.error('Error en API genre:', error)

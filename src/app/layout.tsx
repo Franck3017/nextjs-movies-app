@@ -4,6 +4,7 @@ import { inter } from "./fonts";
 import { NotificationProvider } from "../contexts/NotificationContext";
 import { FavoritesProvider } from "../contexts/FavoritesContext";
 import { UserProvider } from "../contexts/UserContext";
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: "CineApp - Tu app de películas y series",
@@ -25,6 +26,7 @@ export default function RootLayout({
             </FavoritesProvider>
           </UserProvider>
         </NotificationProvider>
+        <Analytics />
       </body>
     </html>
   );

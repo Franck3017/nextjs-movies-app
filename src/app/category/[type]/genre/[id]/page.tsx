@@ -384,7 +384,7 @@ export default function GenrePage() {
                           overview={item.overview}
                           rating={item.vote_average}
                           year={year}
-                          mediaType={type as 'movie' | 'tv'}
+                          mediaType={type === 'movies' ? 'movie' : 'tv'}
                           release_date={item.release_date}
                           first_air_date={item.first_air_date}
                           runtime={type === 'movies' ? item.runtime : item.episode_run_time?.[0]}

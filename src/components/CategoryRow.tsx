@@ -94,12 +94,12 @@ export default function CategoryRow({ title, fetchUrl, showRating = false, icon 
     
     // Handle special categories
     if (title.includes('🔥') || title.includes('Tendencias') || fetchUrl.includes('/popular')) {
-      const isMovies = fetchUrl.includes('movie')
+      const isMovies = fetchUrl.includes('/api/movies/')
       return `/category/${isMovies ? 'movies' : 'tv'}/popular`
     }
     
     if (title.includes('⭐') || title.includes('Mejor Valoradas') || fetchUrl.includes('/top_rated')) {
-      const isMovies = fetchUrl.includes('movie')
+      const isMovies = fetchUrl.includes('/api/movies/')
       return `/category/${isMovies ? 'movies' : 'tv'}/top_rated`
     }
     
@@ -107,7 +107,7 @@ export default function CategoryRow({ title, fetchUrl, showRating = false, icon 
     const genreMatch = fetchUrl.match(/genre\/(\d+)/)
     if (genreMatch) {
       const genreId = genreMatch[1]
-      const isMovies = fetchUrl.includes('movie')
+      const isMovies = fetchUrl.includes('/api/movies/')
       return `/category/${isMovies ? 'movies' : 'tv'}/genre/${genreId}`
     }
     
@@ -115,7 +115,7 @@ export default function CategoryRow({ title, fetchUrl, showRating = false, icon 
     const discoverGenreMatch = fetchUrl.match(/with_genres=(\d+)/)
     if (discoverGenreMatch) {
       const genreId = discoverGenreMatch[1]
-      const isMovies = fetchUrl.includes('discover/movie') || fetchUrl.includes('movie/')
+      const isMovies = fetchUrl.includes('/api/movies/')
       return `/category/${isMovies ? 'movies' : 'tv'}/genre/${genreId}`
     }
     
@@ -321,7 +321,7 @@ export default function CategoryRow({ title, fetchUrl, showRating = false, icon 
                     : null
                   
                   // Determine runtime based on media type
-                  const runtime = fetchUrl.includes('movie') 
+                  const runtime = fetchUrl.includes('/api/movies/') 
                     ? item.runtime 
                     : item.episode_run_time && item.episode_run_time.length > 0 
                     ? item.episode_run_time[0] 
@@ -351,7 +351,7 @@ export default function CategoryRow({ title, fetchUrl, showRating = false, icon 
                         overview={item.overview}
                         rating={item.vote_average}
                         year={year}
-                        mediaType={fetchUrl.includes('movie') ? 'movie' : 'tv'}
+                        mediaType={fetchUrl.includes('/api/movies/') ? 'movie' : 'tv'}
                         release_date={item.release_date}
                         first_air_date={item.first_air_date}
                         runtime={runtime}
