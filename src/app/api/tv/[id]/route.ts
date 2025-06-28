@@ -19,7 +19,7 @@ export async function GET(
       throw new Error(`TMDB API error: ${data.status_message || 'Unknown error'}`)
     }
 
-    // Extraer solo los campos relevantes
+    // Extraer todos los campos relevantes incluyendo temporadas
     const {
       id,
       name,
@@ -29,6 +29,7 @@ export async function GET(
       vote_average,
       vote_count,
       first_air_date,
+      last_air_date,
       episode_run_time,
       genres,
       credits,
@@ -37,8 +38,13 @@ export async function GET(
       recommendations,
       popularity,
       production_companies,
+      networks,
+      created_by,
       number_of_seasons,
-      number_of_episodes
+      number_of_episodes,
+      status,
+      type,
+      seasons
     } = data
 
     return NextResponse.json({
@@ -50,6 +56,7 @@ export async function GET(
       vote_average,
       vote_count,
       first_air_date,
+      last_air_date,
       episode_run_time,
       genres,
       credits,
@@ -58,8 +65,13 @@ export async function GET(
       recommendations,
       popularity,
       production_companies,
+      networks,
+      created_by,
       number_of_seasons,
-      number_of_episodes
+      number_of_episodes,
+      status,
+      type,
+      seasons
     })
   } catch (error) {
     console.error('TV details API error:', error)

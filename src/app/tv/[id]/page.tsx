@@ -34,6 +34,7 @@ interface TVShow {
   vote_count: number
   first_air_date: string
   last_air_date: string
+  episode_run_time?: number[]
   number_of_seasons: number
   number_of_episodes: number
   status: string
@@ -105,6 +106,7 @@ export default function TVShowPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'cast' | 'seasons' | 'similar'>('overview')
+  const [castCrewTab, setCastCrewTab] = useState<'cast' | 'crew'>('cast')
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
   const [trailerKey, setTrailerKey] = useState<string | undefined>(undefined)
 
@@ -359,6 +361,12 @@ export default function TVShowPage() {
                         <span>{tvShow.number_of_episodes} episodios</span>
                       </div>
                     )}
+                    {tvShow.episode_run_time && tvShow.episode_run_time.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span>{tvShow.episode_run_time[0]} min por episodio</span>
+                      </div>
+                    )}
                     {tvShow.first_air_date && (
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
@@ -541,25 +549,122 @@ export default function TVShowPage() {
                 transition={{ duration: 0.5 }}
               >
                 <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-                  <h2 className="text-2xl font-bold text-white mb-6">Reparto Principal</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {tvShow.credits?.cast?.slice(0, 9).map((actor) => (
-                      <div
-                        key={actor.id}
-                        className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors"
+                  <h2 className="text-2xl font-bold text-white mb-6">Reparto y Equipo</h2>
+                  
+                  {/* Cast/Crew Tabs */}
+                  <div className="flex justify-center mb-6">
+                    <div className="bg-gray-800/50 rounded-full p-1 border border-gray-700/50">
+                      <button
+                        onClick={() => setCastCrewTab('cast')}
+                        className={`px-4 py-2 rounded-full font-semibold transition-all duration-300 ${
+                          castCrewTab === 'cast'
+                            ? 'bg-cineRed text-white shadow-lg'
+                            : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+                        }`}
                       >
-                        <img
-                          src={`https://image.tmdb.org/t/p/w45${actor.profile_path}`}
-                          alt={actor.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div>
-                          <h4 className="text-white font-semibold">{actor.name}</h4>
-                          <p className="text-gray-400 text-sm">{actor.character}</p>
-                        </div>
-                      </div>
-                    ))}
+                        Reparto
+                      </button>
+                      <button
+                        onClick={() => setCastCrewTab('crew')}
+                        className={`px-4 py-2 rounded-full font-semibold transition-all duration-300 ${
+                          castCrewTab === 'crew'
+                            ? 'bg-cineRed text-white shadow-lg'
+                            : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+                        }`}
+                      >
+                        Equipo
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Cast Section */}
+                  {castCrewTab === 'cast' && (
+                    <div>
+                      <h3 className="text-xl font-semibold text-white mb-4">Reparto Principal</h3>
+                      {tvShow.credits?.cast && tvShow.credits.cast.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {tvShow.credits.cast.slice(0, 12).map((actor) => (
+                            <motion.div
+                              key={actor.id}
+                              className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer group"
+                              onClick={() => router.push(`/person/${actor.id}`)}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              {actor.profile_path ? (
+                                <img
+                                  src={`https://image.tmdb.org/t/p/w92${actor.profile_path}`}
+                                  alt={actor.name}
+                                  className="w-12 h-12 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center">
+                                  <Users className="w-6 h-6 text-gray-500" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-white font-semibold truncate group-hover:text-cineRed transition-colors">
+                                  {actor.name}
+                                </h4>
+                                <p className="text-gray-400 text-sm truncate">{actor.character}</p>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="text-4xl mb-3">🎭</div>
+                          <p className="text-gray-400">No hay información de reparto disponible.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Crew Section */}
+                  {castCrewTab === 'crew' && (
+                    <div>
+                      <h3 className="text-xl font-semibold text-white mb-4">Equipo Técnico</h3>
+                      {tvShow.credits?.crew && tvShow.credits.crew.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {tvShow.credits.crew.slice(0, 12).map((member) => (
+                            <motion.div
+                              key={member.id}
+                              className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer group"
+                              onClick={() => router.push(`/person/${member.id}`)}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              {member.profile_path ? (
+                                <img
+                                  src={`https://image.tmdb.org/t/p/w92${member.profile_path}`}
+                                  alt={member.name}
+                                  className="w-12 h-12 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center">
+                                  <Users className="w-6 h-6 text-gray-500" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-white font-semibold truncate group-hover:text-cineRed transition-colors">
+                                  {member.name}
+                                </h4>
+                                <p className="text-gray-400 text-sm truncate">{member.job}</p>
+                                {member.department && (
+                                  <p className="text-gray-500 text-xs truncate">{member.department}</p>
+                                )}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="text-4xl mb-3">🎬</div>
+                          <p className="text-gray-400">No hay información del equipo técnico disponible.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -574,31 +679,57 @@ export default function TVShowPage() {
               >
                 <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
                   <h2 className="text-2xl font-bold text-white mb-6">Temporadas</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {tvShow.seasons?.map((season) => (
-                      <div
-                        key={season.id}
-                        className="bg-gray-800/50 rounded-lg overflow-hidden hover:bg-gray-700/50 transition-colors"
-                      >
-                        <img
-                          src={`https://image.tmdb.org/t/p/w300${season.poster_path}`}
-                          alt={season.name}
-                          className="w-full h-48 object-cover"
-                        />
-                        <div className="p-4">
-                          <h4 className="text-white font-semibold mb-2">{season.name}</h4>
-                          <p className="text-gray-400 text-sm mb-2">
-                            {season.episode_count} episodios
-                          </p>
-                          {season.air_date && (
-                            <p className="text-gray-500 text-xs">
-                              {new Date(season.air_date).toLocaleDateString('es-ES')}
-                            </p>
+                  
+                  {tvShow.seasons && tvShow.seasons.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {tvShow.seasons.map((season) => (
+                        <div
+                          key={season.id}
+                          className="bg-gray-800/50 rounded-lg overflow-hidden hover:bg-gray-700/50 transition-colors"
+                        >
+                          {season.poster_path ? (
+                            <img
+                              src={`https://image.tmdb.org/t/p/w300${season.poster_path}`}
+                              alt={season.name}
+                              className="w-full h-48 object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-48 bg-gray-700 flex items-center justify-center">
+                              <Tv className="w-12 h-12 text-gray-500" />
+                            </div>
                           )}
+                          <div className="p-4">
+                            <h4 className="text-white font-semibold mb-2">{season.name}</h4>
+                            {season.episode_count > 0 && (
+                              <p className="text-gray-400 text-sm mb-2">
+                                {season.episode_count} episodio{season.episode_count !== 1 ? 's' : ''}
+                              </p>
+                            )}
+                            {season.air_date && (
+                              <p className="text-gray-500 text-xs">
+                                {new Date(season.air_date).toLocaleDateString('es-ES')}
+                              </p>
+                            )}
+                            {season.overview && (
+                              <p className="text-gray-400 text-xs mt-2 line-clamp-2">
+                                {season.overview}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="text-6xl mb-4">📺</div>
+                      <h3 className="text-xl font-semibold text-white mb-2">
+                        No hay temporadas disponibles
+                      </h3>
+                      <p className="text-gray-400">
+                        La información de temporadas no está disponible para esta serie.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}

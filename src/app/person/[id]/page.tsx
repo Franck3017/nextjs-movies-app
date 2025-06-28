@@ -14,7 +14,9 @@ import {
   Globe,
   ExternalLink,
   Heart,
-  Share2
+  Share2,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import Image from 'next/image'
 import Layout from '../../../components/Layout'
@@ -52,6 +54,9 @@ interface Person {
       character?: string
       job?: string
       department?: string
+      runtime?: number
+      episode_run_time?: number[]
+      genres?: Array<{ id: number; name: string }>
     }>
     crew: Array<{
       id: number
@@ -65,6 +70,9 @@ interface Person {
       media_type: 'movie' | 'tv'
       job: string
       department: string
+      runtime?: number
+      episode_run_time?: number[]
+      genres?: Array<{ id: number; name: string }>
     }>
   }
   images: {
@@ -91,6 +99,20 @@ export default function PersonPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'movies' | 'tv' | 'photos'>('overview')
+  const [expandedBiography, setExpandedBiography] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    // Check if device is mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     const fetchPerson = async () => {
@@ -182,6 +204,23 @@ export default function PersonPage() {
     })
   }
 
+  const truncateBiography = (text: string, maxWords: number) => {
+    if (!text) return 'No hay biografía disponible.'
+    
+    const words = text.trim().split(/\s+/)
+    if (words.length <= maxWords) return text
+    
+    return words.slice(0, maxWords).join(' ') + '...'
+  }
+
+  const shouldShowExpandButton = () => {
+    if (!person?.biography) return false
+    
+    const words = person.biography.trim().split(/\s+/)
+    const maxWords = isMobile ? 40 : 65
+    return words.length > maxWords
+  }
+
   if (loading) {
     return (
       <Layout>
@@ -214,25 +253,16 @@ export default function PersonPage() {
   const age = getAge(person.birthday, person.deathday)
   const isDeceased = !!person.deathday
 
-  // Combine cast and crew, remove duplicates, and sort by rating
-  const allCredits = [
-    ...person.combined_credits.cast.map(item => ({ ...item, creditType: 'cast' as const })),
-    ...person.combined_credits.crew.map(item => ({ ...item, creditType: 'crew' as const }))
-  ]
+  // Process combined credits to get top movies and TV shows
+  const topMovies = person?.combined_credits?.cast
+    ?.filter(item => item.media_type === 'movie' && (item.title || item.name))
+    ?.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
+    ?.slice(0, 10) || []
 
-  // Remove duplicates based on ID and media_type
-  const uniqueCredits = allCredits.filter((item, index, self) => 
-    self.findIndex(t => t.id === item.id && t.media_type === item.media_type) === index
-  )
-
-  const topMovies = uniqueCredits
-    .filter(item => item.media_type === 'movie')
-    .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
-    .slice(0, 10)
-  const topTV = uniqueCredits
-    .filter(item => item.media_type === 'tv')
-    .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
-    .slice(0, 10)
+  const topTV = person?.combined_credits?.cast
+    ?.filter(item => item.media_type === 'tv' && (item.name || item.title))
+    ?.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
+    ?.slice(0, 10) || []
 
   return (
     <Layout>
@@ -422,9 +452,37 @@ export default function PersonPage() {
               >
                 <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
                   <h2 className="text-2xl font-bold text-white mb-4">Biografía</h2>
-                  <p className="text-gray-300 leading-relaxed text-lg mb-6">
-                    {person.biography || 'No hay biografía disponible.'}
+                  
+                  {/* Base text - always visible */}
+                  <p className="text-gray-300 leading-relaxed text-lg">
+                    {expandedBiography ? person?.biography : truncateBiography(person?.biography || '', isMobile ? 40 : 65)}
                   </p>
+                  
+                  {/* Expand/Collapse Button - Right after biography text */}
+                  {shouldShowExpandButton() && (
+                    <motion.div 
+                      className="mt-6 mb-6"
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                    >
+                      <motion.button
+                        onClick={() => setExpandedBiography(!expandedBiography)}
+                        className="flex items-center justify-center gap-2 px-4 py-2 text-cineRed hover:text-cineRed/90 transition-all duration-300 rounded-lg hover:bg-cineRed/10"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <motion.div
+                          animate={{ rotate: expandedBiography ? 180 : 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </motion.div>
+                        {expandedBiography ? 'Ver menos' : 'Ver más'}
+                      </motion.button>
+                    </motion.div>
+                  )}
 
                   {/* Additional Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -510,6 +568,8 @@ export default function PersonPage() {
                             }
                             release_date={movie.release_date}
                             first_air_date={movie.first_air_date}
+                            runtime={movie.runtime}
+                            genres={movie.genres?.map(genre => genre.name)}
                           />
                         </motion.div>
                       ))}
@@ -553,6 +613,8 @@ export default function PersonPage() {
                             }
                             release_date={show.release_date}
                             first_air_date={show.first_air_date}
+                            runtime={show.episode_run_time?.[0]}
+                            genres={show.genres?.map(genre => genre.name)}
                           />
                         </motion.div>
                       ))}

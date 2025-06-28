@@ -33,6 +33,48 @@ export async function GET(
 
     const personData = await personResponse.json()
 
+    // Fetch detailed information for all movies and TV shows in cast
+    if (personData.combined_credits?.cast) {
+      console.log(`Fetching details for ${personData.combined_credits.cast.length} cast items`)
+      
+      const detailedResults = await Promise.all(
+        personData.combined_credits.cast.map(async (item: any) => {
+          try {
+            const detailEndpoint = item.media_type === 'movie' ? 'movie' : 'tv'
+            const detailUrl = `${TMDB_BASE_URL}/${detailEndpoint}/${item.id}?api_key=${TMDB_API_KEY}&language=es-ES`
+            
+            const detailResponse = await fetch(detailUrl)
+            if (detailResponse.ok) {
+              const detailData = await detailResponse.json()
+              
+              // Log for debugging
+              if (item.media_type === 'movie' && detailData.runtime) {
+                console.log(`Movie ${item.id} (${item.title}): runtime = ${detailData.runtime}, genres = ${detailData.genres?.length || 0}`)
+              } else if (item.media_type === 'tv' && detailData.episode_run_time) {
+                console.log(`TV ${item.id} (${item.name}): episode_run_time = ${detailData.episode_run_time}, genres = ${detailData.genres?.length || 0}`)
+              }
+              
+              return {
+                ...item,
+                runtime: item.media_type === 'movie' ? detailData.runtime : undefined,
+                episode_run_time: item.media_type === 'tv' ? detailData.episode_run_time : undefined,
+                genres: detailData.genres || []
+              }
+            } else {
+              console.warn(`Failed to fetch details for ${item.media_type} ${item.id}: ${detailResponse.status}`)
+              return item
+            }
+          } catch (error) {
+            console.error(`Error fetching details for ${item.media_type} ${item.id}:`, error)
+            return item
+          }
+        })
+      )
+
+      // Update the cast with detailed information
+      personData.combined_credits.cast = detailedResults
+    }
+
     return NextResponse.json(personData)
   } catch (error) {
     console.error('Error en API person:', error)

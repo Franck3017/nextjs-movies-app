@@ -9,6 +9,7 @@ import LoadingSpinner from '../../../components/LoadingSpinner'
 import SEOHead from '../../../components/SEOHead'
 import AvatarGroup from '../../../components/AvatarGroup'
 import VideoModal from '../../../components/VideoModal'
+import MovieCard from '../../../components/MovieCard'
 import { useNotifications } from '../../../contexts/NotificationContext'
 import { useFavorites } from '../../../contexts/FavoritesContext'
 
@@ -62,6 +63,21 @@ interface Credits {
   }>
 }
 
+interface SimilarMovie {
+  id: number
+  title?: string
+  name?: string
+  poster_path: string
+  overview: string
+  vote_average: number
+  release_date?: string
+  first_air_date?: string
+  media_type: 'movie' | 'tv'
+  runtime?: number
+  episode_run_time?: number[]
+  genres?: Array<{ id: number; name: string }>
+}
+
 export default function MoviePage() {
   const params = useParams()
   const router = useRouter()
@@ -69,6 +85,7 @@ export default function MoviePage() {
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
   const [movie, setMovie] = useState<MovieDetails | null>(null)
   const [credits, setCredits] = useState<Credits | null>(null)
+  const [similarMovies, setSimilarMovies] = useState<SimilarMovie[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [mediaType, setMediaType] = useState<'movie' | 'tv'>('movie')
@@ -112,6 +129,13 @@ export default function MoviePage() {
         if (creditsResponse.ok) {
           const creditsData = await creditsResponse.json()
           setCredits(creditsData)
+        }
+
+        // Fetch similar movies
+        const similarResponse = await fetch(`/api/${currentMediaType}/${movieId}/similar`)
+        if (similarResponse.ok) {
+          const similarData = await similarResponse.json()
+          setSimilarMovies(similarData.results?.slice(0, 10) || [])
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -525,6 +549,55 @@ export default function MoviePage() {
               </div>
             </div>
           </div>
+
+          {/* Similar Movies Section */}
+          {similarMovies.length > 0 && (
+            <div className="container mx-auto px-6 sm:px-8 lg:px-12 py-8 lg:py-12">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9 }}
+              >
+                <h2 className="text-2xl font-bold text-white mb-6">
+                  {mediaType === 'movie' ? 'Películas Relacionadas' : 'Series Relacionadas'}
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 lg:gap-6">
+                  {similarMovies.map((similarMovie, index) => (
+                    <motion.div
+                      key={similarMovie.id}
+                      initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ 
+                        delay: 0.9 + (index * 0.1), 
+                        duration: 0.5,
+                        type: 'spring',
+                        stiffness: 100
+                      }}
+                    >
+                      <MovieCard
+                        id={similarMovie.id}
+                        title={similarMovie.title || similarMovie.name || ''}
+                        posterPath={similarMovie.poster_path}
+                        overview={similarMovie.overview}
+                        rating={similarMovie.vote_average}
+                        year={similarMovie.release_date 
+                          ? new Date(similarMovie.release_date).getFullYear()
+                          : similarMovie.first_air_date 
+                          ? new Date(similarMovie.first_air_date).getFullYear()
+                          : null
+                        }
+                        mediaType={similarMovie.media_type}
+                        release_date={similarMovie.release_date}
+                        first_air_date={similarMovie.first_air_date}
+                        runtime={similarMovie.media_type === 'movie' ? similarMovie.runtime : similarMovie.episode_run_time?.[0]}
+                        genres={similarMovie.genres?.map(genre => genre.name) || []}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          )}
         </div>
       </Layout>
       {isVideoModalOpen && (
