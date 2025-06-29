@@ -25,10 +25,12 @@ import {
   Film,
   Globe,
   Tag,
-  BarChart3
+  BarChart3,
+  Database
 } from 'lucide-react'
 import { useFavorites } from '../contexts/FavoritesContext'
 import { useNotifications } from '../contexts/NotificationContext'
+import { useTMDBIntegration } from '../hooks/useTMDBIntegration'
 
 interface Recommendation {
   id: number
@@ -95,6 +97,7 @@ export default function HeroBanner({
   
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
   const { showNotification } = useNotifications()
+  const { importedContent } = useTMDBIntegration()
 
   const bgUrl = `https://image.tmdb.org/t/p/original${backdropPath}`
   const posterUrl = `https://image.tmdb.org/t/p/w500${posterPath}`
@@ -250,6 +253,11 @@ export default function HeroBanner({
     // Navegar a la página de la película/serie recomendada
     const route = item.media_type === 'movie' ? '/movie' : '/tv'
     router.push(`${route}/${item.id}`)
+  }
+
+  const handleCastClick = (personId: number) => {
+    // Navegar a la página de la persona
+    router.push(`/person/${personId}`)
   }
 
   const handleRecommendationTrailer = async (e: React.MouseEvent, item: Recommendation) => {
@@ -580,7 +588,7 @@ export default function HeroBanner({
                 
                 {/* Action Buttons - Responsive */}
                 <motion.div
-                  className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+                  className="flex flex-row gap-3 sm:gap-4"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.0, duration: 0.8 }}
@@ -631,11 +639,13 @@ export default function HeroBanner({
                       <AnimatePresence mode="wait">
                         <motion.div
                           key={currentSlide}
-                          className="flex items-center gap-2 sm:gap-3"
+                          className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:bg-white/5 rounded-lg p-2 transition-colors"
                           initial={{ opacity: 0, x: 20 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.3 }}
+                          onClick={() => handleCastClick(cast[currentSlide]?.id ?? 0)}
+                          title={`Ver perfil de ${cast[currentSlide]?.name}`}
                         >
                           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
                             {cast[currentSlide]?.profile_path ? (
@@ -751,11 +761,75 @@ export default function HeroBanner({
         </div>
       )}
 
+      {/* Imported Content Section - Responsive */}
+      {importedContent.length > 0 && (
+        <div className="bg-gray-800/50 backdrop-blur-sm border-t border-gray-600/50">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+                <h3 className="text-white font-semibold text-base sm:text-lg">Contenido Importado de TMDB</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400 text-xs sm:text-sm bg-blue-900/30 px-2 py-1 rounded-full border border-blue-500/30">
+                  {importedContent.length} elementos
+                </span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+              {importedContent.map((item) => (
+                <motion.div
+                  key={item.id}
+                  className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden border border-white/20 hover:border-blue-400/50 transition-all duration-300 cursor-pointer group"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    const route = 'title' in item ? '/movie' : '/tv'
+                    router.push(`${route}/${item.id}`)
+                  }}
+                >
+                  <div className="relative">
+                    <img
+                      src={`https://image.tmdb.org/t/p/w200${item.poster_path}`}
+                      alt={'title' in item ? item.title : item.name}
+                      className="w-full h-32 sm:h-40 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <div className="bg-blue-500 text-white px-2 py-1 rounded text-xs">
+                        Importado
+                      </div>
+                    </div>
+                    {item.vote_average > 0 && (
+                      <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-black/70 text-white text-xs px-1 py-0.5 rounded flex items-center gap-1">
+                        <Star className="w-2 h-2 sm:w-3 sm:h-3 text-yellow-400" />
+                        {item.vote_average.toFixed(1)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2">
+                    <h4 className="text-white text-xs font-medium truncate" title={'title' in item ? item.title : item.name}>
+                      {'title' in item ? item.title : item.name}
+                    </h4>
+                    <p className="text-gray-400 text-xs mt-1">
+                      {'title' in item ? 'Película' : 'Serie'}
+                    </p>
+                    <p className="text-blue-400 text-xs mt-1">
+                      {new Date('release_date' in item ? item.release_date : item.first_air_date).getFullYear()}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Trailer Modal - Responsive */}
       <AnimatePresence>
         {showTrailer && trailerKey && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-sm"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1060,11 +1134,13 @@ export default function HeroBanner({
                         <Users className="w-4 h-4" />
                         Reparto Principal
                       </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                         {cast.slice(0, 6).map((member) => (
                           <div
                             key={member.id}
-                            className="flex items-center gap-3 p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:border-cineRed/50 transition-colors"
+                            className="flex items-center gap-3 p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:border-cineRed/50 transition-colors cursor-pointer"
+                            onClick={() => handleCastClick(member.id)}
+                            title={`Ver perfil de ${member.name}`}
                           >
                             <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
                               {member.profile_path ? (
@@ -1094,7 +1170,7 @@ export default function HeroBanner({
                         <Globe className="w-4 h-4" />
                         Productoras
                       </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                         {productionCompanies.map((company) => (
                           <div
                             key={company.id}
@@ -1130,7 +1206,7 @@ export default function HeroBanner({
                   )}
 
                   {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/20">
+                  <div className="flex flex-wrap gap-3 pt-4 border-t border-white/20">
                     <button 
                       onClick={handlePlayTrailer}
                       className="btn-cine flex items-center justify-center gap-2 px-6 py-3"

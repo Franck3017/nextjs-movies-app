@@ -112,34 +112,14 @@ export default function ProfilePage() {
   }
 
   // Mock data for badges, friends, activity, reviews, etc.
-  const badges = [
-    { id: 1, name: 'Cinéfilo', icon: <Star className="w-6 h-6 text-yellow-400" />, desc: '10 películas vistas' },
-    { id: 2, name: 'Crítico', icon: <Edit3 className="w-6 h-6 text-blue-400" />, desc: '5 reviews escritas' },
-    { id: 3, name: 'Maratonista', icon: <Tv className="w-6 h-6 text-purple-400" />, desc: '5 series completadas' },
-  ]
-  const friends = [
-    { id: 1, username: 'amigo1', avatar: '', isFollowing: true },
-    { id: 2, username: 'amigo2', avatar: '', isFollowing: false },
-  ]
+  // const friends = [
+  //   { id: 1, username: 'amigo1', avatar: '', isFollowing: true },
+  //   { id: 2, username: 'amigo2', avatar: '', isFollowing: false },
+  // ]
   const reviews = [
     { id: 1, title: 'Inception', content: '¡Excelente película!', rating: 5, date: '2024-05-01' },
     { id: 2, title: 'Matrix', content: 'Un clásico de la ciencia ficción.', rating: 4, date: '2024-04-20' },
   ]
-  const activityData = {
-    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-    datasets: [
-      {
-        label: 'Películas Vistas',
-        data: [2, 4, 3, 5, 6, 2],
-        backgroundColor: 'rgba(220,38,38,0.7)',
-      },
-      {
-        label: 'Series Vistas',
-        data: [1, 2, 1, 3, 2, 1],
-        backgroundColor: 'rgba(139,92,246,0.7)',
-      },
-    ],
-  }
 
   // Avatar/Banner upload handlers (mock)
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -442,8 +422,7 @@ export default function ProfilePage() {
                 <div className="flex gap-1 sm:gap-2 min-w-max">
                   {([
                     { key: 'overview', label: 'Resumen', icon: Eye },
-                    { key: 'badges', label: 'Medallas', icon: Star },
-                    { key: 'friends', label: 'Amigos', icon: Users },
+                    // { key: 'friends', label: 'Amigos', icon: Users },
                     { key: 'activity', label: 'Actividad', icon: Film },
                     { key: 'reviews', label: 'Reseñas', icon: Edit3 },
                     { key: 'preferences', label: 'Preferencias', icon: Settings },
@@ -519,11 +498,11 @@ export default function ProfilePage() {
                       >
                         <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
                           {favorite.media_type === 'movie' ? (
-                            <Film className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                            <img src={`https://image.tmdb.org/t/p/w500${favorite.poster_path}`} alt={favorite.title} className="w-full h-full object-cover rounded-lg" />
                           ) : favorite.media_type === 'tv' ? (
-                            <Tv className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
+                            <img src={`https://image.tmdb.org/t/p/w500${favorite.poster_path}`} alt={favorite.title} className="w-full h-full object-cover rounded-lg" />
                           ) : (
-                            <Users className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
+                            <img src={`https://image.tmdb.org/t/p/w500${favorite.poster_path}`} alt={favorite.title} className="w-full h-full object-cover rounded-lg" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -544,35 +523,7 @@ export default function ProfilePage() {
               </motion.div>
             )}
 
-            {activeTab === 'badges' && (
-              <motion.div
-                key="badges"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-4 sm:space-y-6"
-              >
-                <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-gray-700/50">
-                  <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">Medallas</h2>
-                  <div className="space-y-3 sm:space-y-4">
-                    {badges.map(({ id, name, icon, desc }) => (
-                      <div key={id} className="flex items-center justify-between p-3 sm:p-4 bg-gray-800/30 rounded-lg">
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <div className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">{icon}</div>
-                          <div className="min-w-0">
-                            <div className="text-white font-semibold text-sm sm:text-base">{name}</div>
-                            <div className="text-gray-400 text-xs sm:text-sm">{desc}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {activeTab === 'friends' && (
+            {/* {activeTab === 'friends' && (
               <motion.div
                 key="friends"
                 initial={{ opacity: 0, y: 20 }}
@@ -604,7 +555,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </motion.div>
-            )}
+            )} */}
 
             {activeTab === 'activity' && (
               <motion.div
