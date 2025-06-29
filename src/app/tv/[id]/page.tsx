@@ -109,8 +109,28 @@ export default function TVShowPage() {
   const [castCrewTab, setCastCrewTab] = useState<'cast' | 'crew'>('cast')
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
   const [trailerKey, setTrailerKey] = useState<string | undefined>(undefined)
+  const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean | null>(null)
 
   const tvShowId = params.id as string
+
+  // Verificar si la API key está configurada
+  useEffect(() => {
+    const checkApiKey = async () => {
+      try {
+        const response = await fetch('/api/test-env')
+        if (response.ok) {
+          const data = await response.json()
+          setApiKeyConfigured(!!data.tmdb)
+        } else {
+          setApiKeyConfigured(false)
+        }
+      } catch (error) {
+        setApiKeyConfigured(false)
+      }
+    }
+
+    checkApiKey()
+  }, [])
 
   useEffect(() => {
     const fetchTVShow = async () => {
@@ -209,6 +229,22 @@ export default function TVShowPage() {
         message: 'El enlace se ha copiado al portapapeles'
       })
     }
+  }
+
+  // Mostrar ApiKeyError si la API key no está configurada
+  if (apiKeyConfigured === false) {
+    return <ApiKeyError />
+  }
+
+  // Mostrar loading mientras se verifica la API key
+  if (apiKeyConfigured === null) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner text="Verificando configuración..." />
+        </div>
+      </Layout>
+    )
   }
 
   if (loading) {

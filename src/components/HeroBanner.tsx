@@ -87,6 +87,8 @@ export default function HeroBanner({
   const [showProductionDetails, setShowProductionDetails] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState<{ id: number; name: string; logo_path?: string } | null>(null)
   const [showMoreInfo, setShowMoreInfo] = useState(false)
+  const [recommendationTrailerKey, setRecommendationTrailerKey] = useState<string | null>(null)
+  const [showRecommendationTrailer, setShowRecommendationTrailer] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const recommendationsRef = useRef<HTMLDivElement>(null)
@@ -250,13 +252,47 @@ export default function HeroBanner({
     router.push(`${route}/${item.id}`)
   }
 
-  const handleRecommendationTrailer = (e: React.MouseEvent, item: Recommendation) => {
+  const handleRecommendationTrailer = async (e: React.MouseEvent, item: Recommendation) => {
     e.stopPropagation() // Evitar que se active la navegación
-    showNotification({
-      type: 'info',
-      title: 'Trailer no disponible',
-      message: `No hay trailer disponible para ${item.title}`
-    })
+    
+    try {
+      // Obtener los videos de la película/serie recomendada
+      const response = await fetch(`/api/${item.media_type}/${item.id}`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Buscar el trailer en los videos disponibles
+        const trailer = data.videos?.results?.find(
+          (video: any) => video.type === 'Trailer' && video.site === 'YouTube'
+        )
+        
+        if (trailer) {
+          // Mostrar el trailer en un modal
+          setRecommendationTrailerKey(trailer.key)
+          setShowRecommendationTrailer(true)
+        } else {
+          showNotification({
+            type: 'info',
+            title: 'Trailer no disponible',
+            message: `No hay trailer disponible para ${item.title}`,
+          })
+        }
+      } else {
+        showNotification({
+          type: 'error',
+          title: 'Error',
+          message: `No se pudo obtener información de ${item.title}`,
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching recommendation trailer:', error)
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: `Error al obtener el trailer de ${item.title}`,
+      })
+    }
   }
 
   return (
@@ -741,6 +777,47 @@ export default function HeroBanner({
               />
               <button
                 onClick={() => setShowTrailer(false)}
+                className="absolute top-2 sm:top-4 right-2 sm:right-4 p-1 sm:p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Recommendation Trailer Modal - Responsive */}
+      <AnimatePresence>
+        {showRecommendationTrailer && recommendationTrailerKey && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              setShowRecommendationTrailer(false)
+              setRecommendationTrailerKey(null)
+            }}
+          >
+            <motion.div
+              className="relative w-full max-w-4xl aspect-video bg-black rounded-xl overflow-hidden"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <iframe
+                src={`https://www.youtube.com/embed/${recommendationTrailerKey}?autoplay=1&mute=0&controls=1&rel=0`}
+                title="Trailer de recomendación"
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+              <button
+                onClick={() => {
+                  setShowRecommendationTrailer(false)
+                  setRecommendationTrailerKey(null)
+                }}
                 className="absolute top-2 sm:top-4 right-2 sm:right-4 p-1 sm:p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
               >
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />

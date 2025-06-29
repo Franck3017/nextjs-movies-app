@@ -10,6 +10,7 @@ import SEOHead from '../../../components/SEOHead'
 import AvatarGroup from '../../../components/AvatarGroup'
 import VideoModal from '../../../components/VideoModal'
 import MovieCard from '../../../components/MovieCard'
+import ApiKeyError from '../../../components/ApiKeyError'
 import { useNotifications } from '../../../contexts/NotificationContext'
 import { useFavorites } from '../../../contexts/FavoritesContext'
 
@@ -91,8 +92,28 @@ export default function MoviePage() {
   const [mediaType, setMediaType] = useState<'movie' | 'tv'>('movie')
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
   const [trailerKey, setTrailerKey] = useState<string | undefined>(undefined)
+  const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean | null>(null)
   
   const movieId = params?.id as string
+
+  // Verificar si la API key está configurada
+  useEffect(() => {
+    const checkApiKey = async () => {
+      try {
+        const response = await fetch('/api/test-env')
+        if (response.ok) {
+          const data = await response.json()
+          setApiKeyConfigured(!!data.tmdb)
+        } else {
+          setApiKeyConfigured(false)
+        }
+      } catch (error) {
+        setApiKeyConfigured(false)
+      }
+    }
+
+    checkApiKey()
+  }, [])
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
@@ -197,6 +218,22 @@ export default function MoviePage() {
     } else {
       addToFavorites(favoriteItem)
     }
+  }
+
+  // Mostrar ApiKeyError si la API key no está configurada
+  if (apiKeyConfigured === false) {
+    return <ApiKeyError />
+  }
+
+  // Mostrar loading mientras se verifica la API key
+  if (apiKeyConfigured === null) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner text="Verificando configuración..." />
+        </div>
+      </Layout>
+    )
   }
 
   if (loading) {

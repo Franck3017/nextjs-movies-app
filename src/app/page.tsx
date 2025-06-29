@@ -1,15 +1,18 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
 import HeroBanner from '../components/HeroBanner'
 import CategoryRow from '../components/CategoryRow'
 import LoadingSpinner from '../components/LoadingSpinner'
+import ApiKeyError from '../components/ApiKeyError'
 import { useDynamicCategories } from '../hooks/useDynamicCategories'
 import { useFeaturedContent } from '../hooks/useFeaturedContent'
 import { motion, AnimatePresence } from 'framer-motion'
+import { isApiKeyConfigured } from '../utils'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'movies' | 'tv'>('movies')
+  const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean | null>(null)
   
   const { 
     categories: movieCategories, 
@@ -29,8 +32,44 @@ export default function Home() {
     error: featuredError
   } = useFeaturedContent(activeTab)
 
+  // Verificar si la API key está configurada
+  useEffect(() => {
+    const checkApiKey = async () => {
+      try {
+        // Hacer una llamada de prueba a la API para verificar si funciona
+        const response = await fetch('/api/test-env')
+        if (response.ok) {
+          const data = await response.json()
+          setApiKeyConfigured(!!data.tmdb)
+        } else {
+          setApiKeyConfigured(false)
+        }
+      } catch (error) {
+        setApiKeyConfigured(false)
+      }
+    }
+
+    checkApiKey()
+  }, [])
+
   const isLoading = moviesLoading || tvLoading || featuredLoading
   const hasError = moviesError || tvError || featuredError
+
+  // Mostrar ApiKeyError si la API key no está configurada
+  if (apiKeyConfigured === false) {
+    return <ApiKeyError />
+  }
+
+  // Mostrar loading mientras se verifica la API key
+  if (apiKeyConfigured === null) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner text="Verificando configuración..." />
+        </div>
+      </Layout>
+    )
+  }
 
   if (hasError) {
     return (

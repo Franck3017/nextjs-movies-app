@@ -1,14 +1,18 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Layout from '../../components/Layout'
 import SearchForm from '../../components/SearchForm'
 import SearchFilters from '../../components/SearchFilters'
 import SearchResults from '../../components/SearchResults'
 import SEOHead from '../../components/SEOHead'
+import LoadingSpinner from '../../components/LoadingSpinner'
+import ApiKeyError from '../../components/ApiKeyError'
 import { useSearch } from '../../hooks/useSearch'
 import { motion } from 'framer-motion'
 
 export default function SearchPage() {
+  const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean | null>(null)
+  
   const {
     query,
     setQuery,
@@ -26,6 +30,25 @@ export default function SearchPage() {
     clearSearch,
   } = useSearch()
 
+  // Verificar si la API key está configurada
+  useEffect(() => {
+    const checkApiKey = async () => {
+      try {
+        const response = await fetch('/api/test-env')
+        if (response.ok) {
+          const data = await response.json()
+          setApiKeyConfigured(!!data.tmdb)
+        } else {
+          setApiKeyConfigured(false)
+        }
+      } catch (error) {
+        setApiKeyConfigured(false)
+      }
+    }
+
+    checkApiKey()
+  }, [])
+
   // Update page title based on search query
   useEffect(() => {
     if (searchQuery) {
@@ -34,6 +57,22 @@ export default function SearchPage() {
       document.title = 'Búsqueda | CineApp'
     }
   }, [searchQuery])
+
+  // Mostrar ApiKeyError si la API key no está configurada
+  if (apiKeyConfigured === false) {
+    return <ApiKeyError />
+  }
+
+  // Mostrar loading mientras se verifica la API key
+  if (apiKeyConfigured === null) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner text="Verificando configuración..." />
+        </div>
+      </Layout>
+    )
+  }
 
   return (
     <>

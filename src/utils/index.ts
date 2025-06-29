@@ -164,4 +164,35 @@ export const getStaggerDelay = (index: number, baseDelay: number = 0.1): number 
 
 export const getRandomDelay = (min: number = 0, max: number = 0.5): number => {
   return Math.random() * (max - min) + min
+}
+
+/**
+ * Verifica si la API key de TMDB está configurada
+ * @returns true si la API key está configurada, false en caso contrario
+ */
+export const isApiKeyConfigured = (): boolean => {
+  // En el cliente, verificamos si hay una API key pública
+  if (typeof window !== 'undefined') {
+    return !!process.env.NEXT_PUBLIC_TMDB_API_KEY
+  }
+  
+  // En el servidor, verificamos la API key del servidor
+  return !!process.env.TMDB_API_KEY
+}
+
+/**
+ * Obtiene el estado de configuración de la API key
+ * @returns objeto con el estado de configuración y mensaje
+ */
+export const getApiKeyStatus = (): { configured: boolean; message: string } => {
+  if (isApiKeyConfigured()) {
+    return {
+      configured: true,
+      message: 'API key configurada correctamente'
+    }
+  }
+  return {
+    configured: false,
+    message: 'API key no configurada. Ve a https://www.themoviedb.org/settings/api para obtener una API key gratuita.'
+  }
 } 
